@@ -153,6 +153,24 @@ export async function createPorter(payload) {
 
 export async function createTransit(payload) {
   const month = (payload.transitDate || new Date().toISOString().slice(0, 10)).slice(0, 7);
+
+  // When an item leaves KK/KP/PH, deduct it from existing origin stock.
+  // If the item is not an inventory item at the origin, it is left untouched.
+  if (["KK", "KP", "PH"].includes(payload.origin)) {
+    for (const item of payload.items || []) {
+      const qty = Number(item.quantity || 0);
+      if (qty <= 0) continue;
+
+      const key = cleanKey(`${item.category}_${item.name}`);
+      const originRef = ref(db, `inventory/${payload.origin}/${key}`);
+      const existing = await get(originRef);
+
+      if (existing.exists()) {
+        await adjustInventory(payload.origin, item, -qty);
+      }
+    }
+  }
+
   return addRecord("transits", {
     ...payload,
     transitMonth: month,
