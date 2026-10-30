@@ -1,24 +1,32 @@
 import {
+  createUserWithEmailAndPassword,
+  deleteUser,
+  getAuth,
+  initializeAuth,
   signInWithEmailAndPassword,
-  signOut
+  signOut,
+  updatePassword
 } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
 import {
-  doc,
-  getDoc,
-  setDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
-import { auth, db } from "./firebase-config.js";
+  deleteApp,
+  getApp,
+  getApps,
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+import {
+  get,
+  ref,
+  serverTimestamp,
+  set
+} from "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js";
+import { auth, db, firebaseConfig } from "./firebase-config.js";
 
 export const SYSTEM_ADMIN_UID = "Zy63U0hXZSddx7g8x2hahFtO1d63";
 export const SYSTEM_ADMIN_USERNAME = "mtadmin";
 const INTERNAL_AUTH_DOMAIN = "mt-oms.local";
 
 export function normalizeUsername(value) {
-  return String(value ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "");
+  return String(value ?? "").trim().toLowerCase().replace(/\s+/g, "");
 }
 
 export function isValidUsername(username) {
@@ -27,13 +35,11 @@ export function isValidUsername(username) {
 
 export function usernameToInternalEmail(username) {
   const normalized = normalizeUsername(username);
-  if (!isValidUsername(normalized)) {
-    throw new Error("INVALID_USERNAME");
-  }
+  if (!isValidUsername(normalized)) throw new Error("INVALID_USERNAME");
   return `${normalized}@${INTERNAL_AUTH_DOMAIN}`;
 }
 
-function defaultSystemAdminProfile() {
+export function buildSystemAdminProfile() {
   return {
     username: SYSTEM_ADMIN_USERNAME,
     displayName: "System Administrator",
@@ -41,58 +47,43 @@ function defaultSystemAdminProfile() {
     roleLabel: "System Administrator",
     department: "System Administration",
     primarySite: "ALL",
-    siteAccess: ["KK", "KP", "PH"],
+    siteAccess: { KK: true, KP: true, PH: true },
     active: true,
-    permissions: {
-      users: ["view", "create", "edit", "disable", "reset_password"],
-      inventory: ["view", "create", "edit", "verify", "replenish"],
-      requests: ["view", "create", "approve", "manage"],
-      transit: ["view", "create", "edit", "verify", "manage"],
-      porter: ["view", "create", "edit", "verify", "manage"],
-      billing: ["view", "verify", "manage"],
-      reports: ["view_all", "export"],
-      system: ["full_access"]
-    },
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   };
 }
 
 export async function ensureUserProfile(user) {
-  const ref = doc(db, "users", user.uid);
-  const snap = await getDoc(ref);
+  const userRef = ref(db, `users/${user.uid}`);
+  const snap = await get(userRef);
 
-  if (snap.exists()) {
-    return { id: snap.id, ...snap.data() };
-  }
+  if (snap.exists()) return { uid: user.uid, ...snap.val() };
 
-  if (user.uid !== SYSTEM_ADMIN_UID) {
-    throw new Error("PROFILE_NOT_FOUND");
-  }
+  if (user.uid !== SYSTEM_ADMIN_UID) throw new Error("PROFILE_NOT_FOUND");
 
-  const profile = defaultSystemAdminProfile();
-  await setDoc(ref, profile);
-  const saved = await getDoc(ref);
-  return { id: saved.id, ...saved.data() };
+  const profile = buildSystemAdminProfile();
+  await set(userRef, profile);
+  const saved = await get(userRef);
+  return { uid: user.uid, ...saved.val() };
 }
 
 export async function loginWithUsername(rawUsername, password) {
   const username = normalizeUsername(rawUsername);
+  if (!isValidUsername(username)) throw new Error("INVALID_USERNAME");
 
-  if (!isValidUsername(username)) {
-    throw new Error("INVALID_USERNAME");
-  }
+  const credential = await signInWithEmailAndPassword(
+    auth,
+    usernameToInternalEmail(username),
+    password
+  );
 
-  const internalEmail = usernameToInternalEmail(username);
-  const credential = await signInWithEmailAndPassword(auth, internalEmail, password);
-  const user = credential.user;
-
-  if (username === SYSTEM_ADMIN_USERNAME && user.uid !== SYSTEM_ADMIN_UID) {
+  if (username === SYSTEM_ADMIN_USERNAME && credential.user.uid !== SYSTEM_ADMIN_UID) {
     await signOut(auth);
     throw new Error("ADMIN_UID_MISMATCH");
   }
 
-  const profile = await ensureUserProfile(user);
+  const profile = await ensureUserProfile(credential.user);
 
   if (profile.active !== true) {
     await signOut(auth);
@@ -104,7 +95,37 @@ export async function loginWithUsername(rawUsername, password) {
     throw new Error("USERNAME_MISMATCH");
   }
 
-  return { user, profile };
+  return { user: credential.user, profile };
+}
+
+export async function createStaffAuthUser(username, password) {
+  const normalized = normalizeUsername(username);
+  if (!isValidUsername(normalized)) throw new Error("INVALID_USERNAME");
+
+  const secondaryName = "mtoms-user-creator";
+  const old = getApps().find((a) => a.name === secondaryName);
+  if (old) await deleteApp(old);
+
+  const secondaryApp = initializeApp(firebaseConfig, secondaryName);
+  const secondaryAuth = getAuth(secondaryApp);
+
+  try {
+    const credential = await createUserWithEmailAndPassword(
+      secondaryAuth,
+      usernameToInternalEmail(normalized),
+      password
+    );
+    const uid = credential.user.uid;
+    await signOut(secondaryAuth);
+    return uid;
+  } finally {
+    await deleteApp(secondaryApp);
+  }
+}
+
+export async function changeCurrentPassword(newPassword) {
+  if (!auth.currentUser) throw new Error("NOT_AUTHENTICATED");
+  await updatePassword(auth.currentUser, newPassword);
 }
 
 export async function logout() {
@@ -113,18 +134,20 @@ export async function logout() {
 
 export function friendlyAuthError(error) {
   const code = error?.code || error?.message || "";
-
   const messages = {
     INVALID_USERNAME: "Enter a valid username using letters, numbers, dot, dash or underscore.",
-    PROFILE_NOT_FOUND: "Your account profile has not been configured yet. Please contact the System Administrator.",
+    PROFILE_NOT_FOUND: "This login exists but its MT-OMS profile has not been configured.",
     ADMIN_UID_MISMATCH: "Administrator identity mismatch. Login was blocked.",
     ACCOUNT_DISABLED: "This account is disabled. Please contact the System Administrator.",
     USERNAME_MISMATCH: "The username does not match the assigned account profile.",
+    NOT_AUTHENTICATED: "Please sign in again.",
     "auth/invalid-credential": "Incorrect username or password.",
+    "auth/email-already-in-use": "That username is already in use.",
+    "auth/weak-password": "Use a stronger password with at least 6 characters.",
     "auth/user-disabled": "This account has been disabled.",
-    "auth/too-many-requests": "Too many login attempts. Please try again later.",
+    "auth/too-many-requests": "Too many attempts. Please try again later.",
+    "auth/requires-recent-login": "Please log out and sign in again before changing the password.",
     "auth/network-request-failed": "Unable to reach Firebase. Check the internet connection."
   };
-
-  return messages[code] || "Unable to sign in. Please check the username and password.";
+  return messages[code] || error?.message || "Unable to complete the request.";
 }
