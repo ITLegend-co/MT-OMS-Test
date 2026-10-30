@@ -1,0 +1,68 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'system_admin')",
+        ".write": "auth != null && ((auth.uid === $uid && $uid === 'Zy63U0hXZSddx7g8x2hahFtO1d63' && !data.exists()) || root.child('users').child(auth.uid).child('role').val() === 'system_admin')",
+        ".validate": "newData.hasChildren(['username','displayName','role','department','primarySite','active']) && newData.child('username').isString() && newData.child('username').val().length >= 3 && newData.child('displayName').isString() && newData.child('role').isString() && newData.child('department').isString() && newData.child('primarySite').isString() && newData.child('active').isBoolean()"
+      }
+    },
+    "inventory": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'system_admin' || root.child('users').child(auth.uid).child('role').val() === 'management' || root.child('users').child(auth.uid).child('role').val() === 'accounts' || root.child('users').child(auth.uid).child('role').val() === 'operations_admin')",
+      "$site": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'system_admin' || root.child('users').child(auth.uid).child('role').val() === 'management' || root.child('users').child(auth.uid).child('role').val() === 'accounts' || root.child('users').child(auth.uid).child('role').val() === 'operations_admin' || root.child('users').child(auth.uid).child('primarySite').val() === $site)",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'system_admin' || root.child('users').child(auth.uid).child('role').val() === 'management' || root.child('users').child(auth.uid).child('role').val() === 'operations_admin' || ((root.child('users').child(auth.uid).child('role').val() === 'customer_service' || root.child('users').child(auth.uid).child('role').val() === 'housekeeping') && root.child('users').child(auth.uid).child('primarySite').val() === $site))",
+        ".indexOn": ["name", "category", "updatedAt"],
+        "$itemId": {
+          ".validate": "newData.hasChildren(['name','category','quantity','unit','lowStockLevel']) && newData.child('name').isString() && newData.child('category').isString() && newData.child('quantity').isNumber() && newData.child('quantity').val() >= 0 && newData.child('unit').isString() && newData.child('lowStockLevel').isNumber() && newData.child('lowStockLevel').val() >= 0"
+        }
+      }
+    },
+    "requests": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'system_admin' || root.child('users').child(auth.uid).child('role').val() === 'management' || root.child('users').child(auth.uid).child('role').val() === 'accounts' || root.child('users').child(auth.uid).child('role').val() === 'operations_admin')",
+      "$site": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'system_admin' || root.child('users').child(auth.uid).child('role').val() === 'management' || root.child('users').child(auth.uid).child('role').val() === 'accounts' || root.child('users').child(auth.uid).child('role').val() === 'operations_admin' || root.child('users').child(auth.uid).child('primarySite').val() === $site)",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'system_admin' || root.child('users').child(auth.uid).child('role').val() === 'management' || root.child('users').child(auth.uid).child('role').val() === 'operations_admin' || ((root.child('users').child(auth.uid).child('role').val() === 'customer_service' || root.child('users').child(auth.uid).child('role').val() === 'housekeeping') && root.child('users').child(auth.uid).child('primarySite').val() === $site))",
+        ".indexOn": ["status", "createdAt", "category"],
+        "$requestId": {
+          ".validate": "newData.hasChildren(['site','itemName','category','quantity','unit','status']) && newData.child('site').val() === $site && newData.child('itemName').isString() && newData.child('category').isString() && newData.child('quantity').isNumber() && newData.child('quantity').val() > 0 && newData.child('unit').isString() && newData.child('status').isString()"
+        }
+      }
+    },
+    "transits": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'system_admin' || root.child('users').child(auth.uid).child('role').val() === 'management' || root.child('users').child(auth.uid).child('role').val() === 'operations_admin' || root.child('users').child(auth.uid).child('role').val() === 'customer_service' || root.child('users').child(auth.uid).child('role').val() === 'housekeeping')",
+      ".indexOn": ["status", "origin", "destination", "transitDate", "transitMonth", "billNo"],
+      "$transitId": {
+        ".validate": "newData.hasChildren(['transitDate','billNo','origin','destination','method','items','totalWeight','totalAmount','status']) && newData.child('transitDate').isString() && newData.child('billNo').isString() && newData.child('origin').isString() && newData.child('destination').isString() && newData.child('method').isString() && newData.child('totalWeight').isNumber() && newData.child('totalWeight').val() >= 0 && newData.child('totalAmount').isNumber() && newData.child('totalAmount').val() >= 0 && newData.child('status').isString()"
+      }
+    },
+    "porters": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'system_admin' || root.child('users').child(auth.uid).child('role').val() === 'management' || root.child('users').child(auth.uid).child('role').val() === 'operations_admin' || root.child('users').child(auth.uid).child('role').val() === 'customer_service')",
+      ".indexOn": ["name", "active"],
+      "$porterId": {
+        ".validate": "newData.hasChildren(['name','ratePerKg','active']) && newData.child('name').isString() && newData.child('ratePerKg').isNumber() && newData.child('ratePerKg').val() >= 0 && newData.child('active').isBoolean()"
+      }
+    },
+    "billing": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'system_admin' || root.child('users').child(auth.uid).child('role').val() === 'management' || root.child('users').child(auth.uid).child('role').val() === 'accounts' || root.child('users').child(auth.uid).child('role').val() === 'operations_admin' || root.child('users').child(auth.uid).child('role').val() === 'customer_service')",
+      "$month": {
+        ".indexOn": ["status", "transitDate", "carrierPorterId", "paymentRecipientPorterId"],
+        "$transitId": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'system_admin' || root.child('users').child(auth.uid).child('role').val() === 'management' || root.child('users').child(auth.uid).child('role').val() === 'accounts' || root.child('users').child(auth.uid).child('role').val() === 'customer_service' || (root.child('users').child(auth.uid).child('role').val() === 'housekeeping' && !data.exists() && newData.child('status').val() === 'awaiting_kp_bill_verification'))",
+          ".validate": "newData.hasChildren(['transitId','transitDate','origin','destination','totalAmount','status']) && newData.child('transitId').val() === $transitId && newData.child('totalAmount').isNumber() && newData.child('totalAmount').val() >= 0 && newData.child('status').isString()"
+        }
+      }
+    },
+    "activity": {
+      "$uid": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'system_admin' || root.child('users').child(auth.uid).child('role').val() === 'management')",
+        ".write": "auth != null && auth.uid === $uid && root.child('users').child(auth.uid).child('active').val() === true",
+        ".indexOn": ["at", "action"]
+      }
+    }
+  }
+}
