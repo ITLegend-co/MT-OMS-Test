@@ -3,103 +3,207 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#0f2747" />
   <title>MT Operations Management System</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <main class="page-shell">
-    <section id="loginView" class="auth-card" aria-labelledby="loginTitle">
-      <div class="brand">
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <main id="loginView" class="login-page">
+    <section class="login-card">
+      <div class="brand-lockup">
         <div class="brand-mark">MT</div>
         <div>
-          <p class="eyebrow">Mountain Torq</p>
-          <h1 id="loginTitle">Operations Management System</h1>
+          <div class="eyebrow">Mountain Torq</div>
+          <h1>Operations Management System</h1>
         </div>
       </div>
+      <p class="muted">Inventory, internal transit, porter billing and operations reporting.</p>
 
-      <p class="muted">Sign in using your assigned username and password.</p>
-
-      <form id="loginForm" autocomplete="on">
-        <label for="username">Username</label>
-        <input
-          id="username"
-          name="username"
-          type="text"
-          autocomplete="username"
-          autocapitalize="none"
-          spellcheck="false"
-          required
-          maxlength="40"
-          placeholder="e.g. mtadmin"
-        />
-
-        <label for="password">Password</label>
-        <div class="password-row">
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            required
-            minlength="6"
-            placeholder="Enter your password"
-          />
-          <button id="togglePassword" class="secondary compact" type="button">Show</button>
-        </div>
-
-        <button id="loginButton" class="primary" type="submit">Login</button>
-        <p id="loginMessage" class="form-message" role="status" aria-live="polite"></p>
+      <form id="loginForm" class="stack">
+        <label>Username
+          <input id="username" autocomplete="username" autocapitalize="none" required />
+        </label>
+        <label>Password
+          <div class="password-wrap">
+            <input id="password" type="password" autocomplete="current-password" required />
+            <button id="togglePassword" class="btn ghost small" type="button">Show</button>
+          </div>
+        </label>
+        <button id="loginButton" class="btn primary" type="submit">Login</button>
+        <p id="loginMessage" class="error-text"></p>
       </form>
     </section>
+  </main>
 
-    <section id="appView" class="app-shell hidden" aria-labelledby="dashboardTitle">
+  <div id="appView" class="app hidden">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark smallmark">MT</div>
+        <div><strong>MT-OMS</strong><span>Operations</span></div>
+      </div>
+      <nav id="navMenu" class="nav-menu">
+        <button data-view="dashboard" class="nav-link active">Dashboard</button>
+        <button data-view="inventory" class="nav-link">Inventory</button>
+        <button data-view="requests" class="nav-link">Requests</button>
+        <button data-view="transit" class="nav-link">Transit</button>
+        <button data-view="porters" class="nav-link">Porters</button>
+        <button data-view="billing" class="nav-link">Billing</button>
+        <button data-view="reports" class="nav-link">Reports</button>
+        <button data-view="users" class="nav-link" data-permission="manage_users">Users</button>
+        <button data-view="settings" class="nav-link">My Account</button>
+      </nav>
+      <div class="sidebar-footer">
+        <div id="sidebarUser" class="sidebar-user"></div>
+        <button id="logoutButton" class="btn ghost full" type="button">Logout</button>
+      </div>
+    </aside>
+
+    <section class="workspace">
       <header class="topbar">
         <div>
-          <p class="eyebrow">MT-OMS</p>
-          <h1 id="dashboardTitle">Dashboard</h1>
+          <button id="menuButton" class="btn ghost mobile-only" type="button">Menu</button>
+          <div class="eyebrow">MT Operations Management System</div>
+          <h2 id="pageTitle">Dashboard</h2>
         </div>
-        <div class="user-area">
-          <div class="user-meta">
-            <strong id="displayName">User</strong>
-            <span id="displayRole">Role</span>
-          </div>
-          <button id="logoutButton" class="secondary" type="button">Logout</button>
+        <div class="topbar-right">
+          <span id="liveBadge" class="live-badge">● Live</span>
+          <div id="topUser" class="top-user"></div>
         </div>
       </header>
 
-      <section class="welcome-panel">
-        <div>
-          <p class="eyebrow">Signed in successfully</p>
-          <h2>Welcome to MT Operations Management System</h2>
-          <p id="accessSummary" class="muted"></p>
+      <section id="view-dashboard" class="view active">
+        <div class="hero">
+          <div>
+            <span class="eyebrow light">Overview</span>
+            <h2 id="welcomeTitle">Welcome</h2>
+            <p id="welcomeSummary">Loading your access...</p>
+          </div>
+          <div id="todayLabel" class="date-chip"></div>
+        </div>
+        <div id="dashboardStats" class="stats-grid"></div>
+        <div class="two-col">
+          <article class="panel">
+            <div class="panel-head"><div><span class="eyebrow">Attention</span><h3>Pending Actions</h3></div></div>
+            <div id="pendingActions" class="list-stack empty-state">No pending actions.</div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><span class="eyebrow">Movement</span><h3>Recent Transit</h3></div></div>
+            <div id="recentTransit" class="list-stack empty-state">No transit records yet.</div>
+          </article>
         </div>
       </section>
 
-      <section class="module-grid" aria-label="System modules">
-        <article class="module-card">
-          <span class="module-icon">📦</span>
-          <h3>Inventory</h3>
-          <p>Inventory management will be implemented in the next development stage.</p>
-        </article>
-        <article class="module-card">
-          <span class="module-icon">📝</span>
-          <h3>Requests & Replenishment</h3>
-          <p>Item request and replenishment workflow foundation.</p>
-        </article>
-        <article class="module-card">
-          <span class="module-icon">🚚</span>
-          <h3>Transit & Porter</h3>
-          <p>Internal item movement, porter transit, verification and billing.</p>
-        </article>
-        <article class="module-card">
-          <span class="module-icon">📊</span>
-          <h3>Reports</h3>
-          <p>Site, inventory, movement and porter reporting foundation.</p>
-        </article>
+      <section id="view-inventory" class="view">
+        <div class="section-head">
+          <div><span class="eyebrow">Stock</span><h2>Inventory</h2><p class="muted">PH and KP users see their own site. Authorized users can view all sites.</p></div>
+          <button id="addInventoryBtn" class="btn primary" data-permission="manage_inventory">Add / Update Item</button>
+        </div>
+        <div class="filters">
+          <select id="inventorySiteFilter"></select>
+          <input id="inventorySearch" placeholder="Search item..." />
+          <select id="inventoryCategoryFilter"><option value="">All categories</option></select>
+        </div>
+        <div class="table-card"><div class="table-scroll"><table>
+          <thead><tr><th>Site</th><th>Item</th><th>Category</th><th>Quantity</th><th>Low Level</th><th>Status</th><th>Updated</th></tr></thead>
+          <tbody id="inventoryTable"></tbody>
+        </table></div></div>
+      </section>
+
+      <section id="view-requests" class="view">
+        <div class="section-head">
+          <div><span class="eyebrow">Replenishment</span><h2>Item Requests</h2><p class="muted">PH or KP can request stock. Admin manages replenishment and sending.</p></div>
+          <button id="newRequestBtn" class="btn primary" data-permission="create_request">New Request</button>
+        </div>
+        <div class="filters"><select id="requestSiteFilter"></select><select id="requestStatusFilter">
+          <option value="">All status</option><option value="requested">Requested</option><option value="replenishing">Replenishing</option><option value="sent">Sent</option><option value="received">Received</option><option value="completed">Completed</option>
+        </select></div>
+        <div id="requestsList" class="card-grid"></div>
+      </section>
+
+      <section id="view-transit" class="view">
+        <div class="section-head">
+          <div><span class="eyebrow">Internal Courier</span><h2>Transit</h2><p class="muted">Movement by KK staff or porter, with arrival verification.</p></div>
+          <button id="newTransitBtn" class="btn primary" data-permission="create_transit">New Transit</button>
+        </div>
+        <div class="filters"><select id="transitStatusFilter">
+          <option value="">All status</option><option value="in_transit">In Transit</option><option value="successful_transit">Successful Transit</option>
+        </select><input id="transitSearch" placeholder="Bill no., origin, destination..." /></div>
+        <div class="table-card"><div class="table-scroll"><table>
+          <thead><tr><th>Date</th><th>Bill No.</th><th>Route</th><th>Method</th><th>Carrier</th><th>Weight</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="transitTable"></tbody>
+        </table></div></div>
+      </section>
+
+      <section id="view-porters" class="view">
+        <div class="section-head">
+          <div><span class="eyebrow">Porter Directory</span><h2>Porters</h2><p class="muted">KP can add new porters and maintain their normal RM/kg rate.</p></div>
+          <button id="newPorterBtn" class="btn primary" data-permission="manage_porters">Add Porter</button>
+        </div>
+        <div id="porterGrid" class="card-grid"></div>
+      </section>
+
+      <section id="view-billing" class="view">
+        <div class="section-head">
+          <div><span class="eyebrow">Monthly Compilation</span><h2>Porter Billing</h2><p class="muted">Payment is not on the spot. Transactions are compiled by transit month.</p></div>
+        </div>
+        <div class="filters">
+          <input id="billingMonth" type="month" />
+          <select id="billingStatusFilter"><option value="">All status</option><option value="awaiting_kp_bill_verification">Waiting KP Verification</option><option value="awaiting_accounts_verification">Waiting Accounts</option><option value="accounts_verified">Accounts Verified</option><option value="paid">Paid</option></select>
+        </div>
+        <div id="billingSummary" class="stats-grid compact-stats"></div>
+        <div class="table-card"><div class="table-scroll"><table>
+          <thead><tr><th>Transit</th><th>Bill No.</th><th>Carrier</th><th>Payment To</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="billingTable"></tbody>
+        </table></div></div>
+      </section>
+
+      <section id="view-reports" class="view">
+        <div class="section-head">
+          <div><span class="eyebrow">Reports</span><h2>Reports & Export</h2><p class="muted">Operational summaries with CSV export.</p></div>
+        </div>
+        <div class="report-grid">
+          <article class="panel"><h3>Inventory Report</h3><p>Current stock by site and category.</p><button class="btn secondary export-btn" data-export="inventory">Export CSV</button></article>
+          <article class="panel"><h3>Transit Report</h3><p>Movement, bill, carrier, weight and transit status.</p><button class="btn secondary export-btn" data-export="transit">Export CSV</button></article>
+          <article class="panel"><h3>Porter Billing Report</h3><p>Monthly porter charges, payment recipient and Accounts status.</p><button class="btn secondary export-btn" data-export="billing">Export CSV</button></article>
+        </div>
+      </section>
+
+      <section id="view-users" class="view">
+        <div class="section-head">
+          <div><span class="eyebrow">Administration</span><h2>User Management</h2><p class="muted">Create username-based staff accounts and control site, department and role.</p></div>
+          <button id="newUserBtn" class="btn primary">Create User</button>
+        </div>
+        <div class="table-card"><div class="table-scroll"><table>
+          <thead><tr><th>Name</th><th>Username</th><th>Site</th><th>Department</th><th>Role</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="usersTable"></tbody>
+        </table></div></div>
+      </section>
+
+      <section id="view-settings" class="view">
+        <div class="section-head"><div><span class="eyebrow">Account</span><h2>My Account</h2></div></div>
+        <div class="two-col">
+          <article class="panel"><h3>Profile</h3><div id="profileCard"></div></article>
+          <article class="panel">
+            <h3>Change Password</h3>
+            <form id="passwordForm" class="stack">
+              <label>New Password<input id="newPassword" type="password" minlength="8" required /></label>
+              <label>Confirm Password<input id="confirmPassword" type="password" minlength="8" required /></label>
+              <button class="btn primary" type="submit">Update Password</button>
+            </form>
+          </article>
+        </div>
       </section>
     </section>
-  </main>
+  </div>
+
+  <dialog id="formDialog" class="modal">
+    <form method="dialog" class="modal-shell">
+      <div class="modal-head"><div><span id="modalEyebrow" class="eyebrow">MT-OMS</span><h2 id="modalTitle">Form</h2></div><button class="btn ghost small" value="cancel">Close</button></div>
+      <div id="modalBody"></div>
+    </form>
+  </dialog>
 
   <script type="module" src="./js/app.js"></script>
 </body>
