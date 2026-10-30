@@ -1,49 +1,142 @@
-# One-time System Administrator setup
+# MT-OMS Firebase Setup
 
-The application is configured to use:
+## 1. Authentication
 
-- Username: `mtadmin`
-- Internal Firebase Authentication identity: `mtadmin@mt-oms.local`
-- Required Firebase UID: `Zy63U0hXZSddx7g8x2hahFtO1d63`
-- Role: System Administrator
-- Site access: KK, KP and PH
+Firebase project: `mt-oms-291df`
 
-## Important
+Enable:
 
-The Firebase Authentication user with UID:
+**Authentication > Sign-in method > Email/Password**
+
+The user interface remains username-only. Email is only an internal Firebase identity.
+
+### System Administrator
+
+Locate UID:
 
 `Zy63U0hXZSddx7g8x2hahFtO1d63`
 
-must have its Authentication email set to:
+Set its Authentication email to:
 
 `mtadmin@mt-oms.local`
 
-and it must have a password.
+Set a strong password. Do not store the password in GitHub.
 
-The password is deliberately **not stored in GitHub, JavaScript, Firestore, or this document**.
+Login shown to the administrator:
 
-## Firebase Console steps
+- Username: `mtadmin`
+- Password: the password configured in Firebase Authentication
 
-1. Open Firebase Console.
-2. Select project `mt-oms-291df`.
-3. Go to **Authentication > Users**.
-4. Find the user whose UID is `Zy63U0hXZSddx7g8x2hahFtO1d63`.
-5. Set its email to `mtadmin@mt-oms.local`.
-6. Set/change the password to a strong administrator password known only to the authorized administrator.
-7. Ensure **Email/Password** sign-in is enabled under Authentication > Sign-in method.
-8. Create/enable Firestore Database if it has not yet been created.
-9. Publish the repository's `firestore.rules`.
+On the first successful login, MT-OMS creates the administrator profile under:
 
-After the first successful login with username `mtadmin`, the app automatically creates the System Administrator profile in:
+`/users/Zy63U0hXZSddx7g8x2hahFtO1d63`
 
-`users/Zy63U0hXZSddx7g8x2hahFtO1d63`
+## 2. Realtime Database
 
-No staff-facing email is required.
+Create a Firebase **Realtime Database** on the free Spark plan.
 
-## Free-tier design
+For Malaysia, Singapore / `asia-southeast1` is normally the appropriate nearby location when available.
 
-This foundation uses Firebase Authentication and Cloud Firestore only. It does not require Cloud Functions or Firebase Storage.
+Copy the exact Database URL shown by Firebase Console.
 
-Media/file storage is intentionally deferred for later Google Drive + Apps Script integration.
+The website currently defaults to:
 
-POS is intentionally not included in the current build; it is reserved as a future MT-OMS module.
+`https://mt-oms-291df-default-rtdb.asia-southeast1.firebasedatabase.app`
+
+If the URL shown in your Firebase Console is different, edit `databaseURL` in:
+
+`js/firebase-config.js`
+
+## 3. Publish database rules
+
+Open:
+
+**Firebase Console > Realtime Database > Rules**
+
+Replace the existing rules with the contents of:
+
+`database.rules.json`
+
+Then click **Publish**.
+
+Do not use open development rules such as:
+
+`".read": true`
+
+or:
+
+`".write": true`
+
+The MT-OMS rules use the authenticated UID and the user's stored role/site profile to control access.
+
+## 4. User account creation
+
+Only the System Administrator UI exposes user creation.
+
+The administrator provides:
+
+- Full name
+- Username
+- Temporary password
+- Primary site
+- Department
+- Role
+
+The system creates a hidden Firebase identity such as:
+
+`kpcs01@mt-oms.local`
+
+The staff member only uses:
+
+`kpcs01`
+
+plus their password.
+
+## 5. Current access model
+
+### PH Housekeeping
+- Own PH inventory
+- Create PH requests
+- Transit
+- Verify arrival at PH
+- Porter / movement visibility
+- Reports relevant to available data
+
+### KP Customer Service
+- Own KP inventory
+- Create KP requests
+- Transit
+- Verify arrival at KP
+- Add porters
+- Porter information
+- KP porter bill verification
+- Reports
+
+### KK Operations Admin
+- All inventory visibility
+- Replenishment
+- Requests
+- Transit
+- Porter management
+- Reports
+
+### Accounts
+- All inventory/report visibility
+- Transit and porter visibility
+- Monthly porter billing
+- Accounts verification
+- Mark payment as paid
+
+### Management
+- Full operational access
+
+### System Administrator
+- Full operational access
+- User creation and enable/disable controls
+
+## 6. Future modules
+
+Reserved but not enabled in this build:
+
+- POS
+- Google Drive + Apps Script file/media storage
