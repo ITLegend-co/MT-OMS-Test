@@ -163,31 +163,45 @@ export async function createTransit(payload) {
 
 export async function verifyTransitArrival(transit) {
   const transitRef = ref(db, `transits/${transit.id}`);
-  await update(transitRef, {
-    status: "successful_transit",
-    verifiedAt: serverTimestamp(),
-    verifiedByUid: auth.currentUser?.uid || "",
-    updatedAt: serverTimestamp()
+
+  const result = await runTransaction(transitRef, (current) => {
+    if (!current || current.status !== "in_transit") return;
+    return {
+      ...current,
+      status: "successful_transit",
+      verifiedAt: Date.now(),
+      verifiedByUid: auth.currentUser?.uid || "",
+      updatedAt: Date.now()
+    };
   });
 
-  for (const item of transit.items || []) {
+  if (!result.committed) {
+    throw new Error("This transit has already been verified.");
+  }
+
+  const verifiedTransit = { id: transit.id, ...result.snapshot.val() };
+
+  for (const item of verifiedTransit.items || []) {
     const qty = Number(item.quantity || 0);
-    if (qty > 0 && ["KK", "KP", "PH"].includes(transit.destination)) {
-      await adjustInventory(transit.destination, item, qty);
+    if (qty > 0 && ["KK", "KP", "PH"].includes(verifiedTransit.destination)) {
+      await adjustInventory(verifiedTransit.destination, item, qty);
     }
   }
 
-  if (transit.method === "porter") {
-    const month = transit.transitMonth || (transit.transitDate || "").slice(0, 7);
+  if (verifiedTransit.method === "porter") {
+    const month =
+      verifiedTransit.transitMonth ||
+      (verifiedTransit.transitDate || "").slice(0, 7);
+
     await set(ref(db, `billing/${month}/${transit.id}`), {
       transitId: transit.id,
-      billNo: transit.billNo || "",
-      transitDate: transit.transitDate || "",
-      origin: transit.origin,
-      destination: transit.destination,
-      carrierPorterId: transit.carrierPorterId || "",
+      billNo: verifiedTransit.billNo || "",
+      transitDate: verifiedTransit.transitDate || "",
+      origin: verifiedTransit.origin,
+      destination: verifiedTransit.destination,
+      carrierPorterId: verifiedTransit.carrierPorterId || "",
       paymentRecipientPorterId: "",
-      totalAmount: Number(transit.totalAmount || 0),
+      totalAmount: Number(verifiedTransit.totalAmount || 0),
       status: "awaiting_kp_bill_verification",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
