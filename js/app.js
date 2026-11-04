@@ -338,7 +338,7 @@ function subscribeData() {
 
 function userForm() {
   const roleOptions = Object.entries(ROLE_LABELS).filter(([key]) => key !== "system_admin").map(([key,label]) => '<option value="' + key + '">' + label + "</option>").join("");
-  openModal("Create User", '<form id="createUserForm" class="form-grid"><label>Full Name<input name="displayName" required /></label><label>Username<input name="username" required maxlength="40" /></label><label>Temporary Password<input name="password" type="password" minlength="8" required /></label><label>Primary Site<select name="primarySite"><option>KK</option><option>KP</option><option>PH</option><option value="ALL">All Sites</option></select></label><label>Department<input name="department" required placeholder="e.g. Customer Service" /></label><label>Role<select name="role">' + roleOptions + '</select></label><div class="form-actions full-row"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Create User</button></div></form>');
+  openModal("Create User", '<form id="createUserForm" class="form-grid"><label>Full Name<input name="displayName" required /></label><label>Username<input name="username" required maxlength="40" /></label><label>Temporary Password<input name="password" type="password" minlength="8" required /></label><label>Primary Site<select name="primarySite"><option>KK</option><option>KP</option><option>PH</option><option value="ALL">All Sites</option></select></label><label>Role<select name="role">' + roleOptions + '</select></label><div class="form-actions full-row"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Create User</button></div></form>');
 }
 
 function inventoryForm() {
@@ -559,7 +559,7 @@ function bindEvents() {
           displayName:String(fd.get("displayName")).trim(),
           role,
           roleLabel:ROLE_LABELS[role],
-          department:String(fd.get("department")).trim(),
+          department: ROLE_LABELS[role],
           primarySite:site,
           siteAccess: site === "ALL" ? {KK:true,KP:true,PH:true} : {[site]:true},
           active:true,
