@@ -16,9 +16,11 @@ Locate UID:
 
 `Zy63U0hXZSddx7g8x2hahFtO1d63`
 
-Set its Authentication email to:
+Keep its existing Authentication email:
 
-`mtadmin@mt-oms.local`
+`itverif@mountaintorq.com`
+
+Do not change or recreate this Firebase Authentication account. The website maps the username `mtadmin` to this email internally.
 
 Set a strong password. Do not store the password in GitHub.
 
