@@ -45,7 +45,7 @@ If Firebase Console shows a different Realtime Database URL, replace that single
 
 - Username: `mtadmin`
 - Required UID: `Zy63U0hXZSddx7g8x2hahFtO1d63`
-- Internal auth identity: `mtadmin@mt-oms.local`
+- Existing Firebase Auth email (kept unchanged): `itverif@mountaintorq.com`
 
 The password is never stored in this repository.
 
