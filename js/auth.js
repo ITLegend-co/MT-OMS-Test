@@ -36,6 +36,9 @@ export function isValidUsername(username) {
 export function usernameToInternalEmail(username) {
   const normalized = normalizeUsername(username);
   if (!isValidUsername(normalized)) throw new Error("INVALID_USERNAME");
+  // The existing System Administrator already has a Firebase Auth account.
+  // Keep its email and UID unchanged while offering username-only login.
+  if (normalized === SYSTEM_ADMIN_USERNAME) return "itverif@mountaintorq.com";
   return `${normalized}@${INTERNAL_AUTH_DOMAIN}`;
 }
 
