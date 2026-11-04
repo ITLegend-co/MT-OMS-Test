@@ -81,8 +81,7 @@ The administrator provides:
 - Username
 - Temporary password
 - Primary site
-- Department
-- Role
+- Role (department is automatically assigned from the selected role; no department entry required)
 
 The system creates a hidden Firebase identity such as:
 
